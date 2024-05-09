@@ -25,14 +25,16 @@ streaming_df.createOrReplaceTempView("view")
 
 query = spark.sql("select window, cast(value as string), count(1) c from view group by window(timestamp,'60 seconds'), value order by c desc")
 
-q2 = query.writeStream.format("console").outputMode("complete").option("truncate",False).option("numRows",50).start()
+#q2 = query.writeStream.format("console").outputMode("complete").option("truncate",False).option("numRows",50).start()
 
 def foreach_batch_function(batch_df, batch_id):
     # Convert the key and value columns to strings and print them
     for row in batch_df.collect():
         print("Key: {}, Value: {}, BatchId: {}".format(row['key'].decode('utf-8'), row['value'].decode('utf-8'),batch_id))
 
-#query = streaming_df.writeStream.foreachBatch(foreach_batch_function).start()
 
-q2.awaitTermination()
-#query.awaitTermination()
+q1 = streaming_df.writeStream.foreachBatch(foreach_batch_function).trigger(processingTime='0 seconds').start()
+
+
+#q2.awaitTermination()
+q1.awaitTermination()
